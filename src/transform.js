@@ -1,3 +1,11 @@
+// FRED's only keyless data endpoint (graph/fredgraph.csv) returns CSV, and
+// TRMNL's poller only accepts JSON, so the per-series downloads have to happen
+// here rather than as polling URLs. they run in parallel and each one is
+// individually capped, so a single slow series degrades to "No FRED data for X"
+// instead of blowing the 5s transform budget for the whole screen.
+
+var FETCH_TIMEOUT_MS = 3500;
+
 function round3(n) {
   return Math.round(n * 1000) / 1000;
 }
@@ -21,6 +29,25 @@ function median(values) {
 
 function missing(id) {
   return { id: id, title: id, error: true, points: [], min: 0, max: 0, median: 0 };
+}
+
+// fetch that can never hang: resolves to null on error, non-2xx, or timeout
+async function fetchText(url, ms) {
+  var ctrl = null;
+  var timer = null;
+  if (typeof AbortController !== "undefined") {
+    ctrl = new AbortController();
+    timer = setTimeout(function () { ctrl.abort(); }, ms);
+  }
+  try {
+    var res = await fetch(url, ctrl ? { signal: ctrl.signal } : undefined);
+    if (!res.ok) return null;
+    return await res.text();
+  } catch (e) {
+    return null;
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
 }
 
 async function run(input) {
@@ -54,63 +81,60 @@ async function run(input) {
       var id = (s.graph_series_ids && s.graph_series_ids[0]) || obj.series_id || null;
       if (!id) return null;
 
-      try {
-        // no cosd/coed: FRED returns the full history for the series
-        var url = "https://fred.stlouisfed.org/graph/fredgraph.csv?id=" + encodeURIComponent(id);
-        var res = await fetch(url);
-        if (!res.ok) return missing(id);
-        var text = await res.text();
+      // no cosd/coed: FRED returns the full history for the series
+      var text = await fetchText(
+        "https://fred.stlouisfed.org/graph/fredgraph.csv?id=" + encodeURIComponent(id),
+        FETCH_TIMEOUT_MS
+      );
+      if (!text) return missing(id);
 
-        var rows = [];
-        var vals = [];
-        var lines = text.split(/\r?\n/);
-        for (var i = 1; i < lines.length; i++) {
-          var line = lines[i];
-          if (!line) continue;
-          var comma = line.indexOf(",");
-          if (comma < 1) continue;
-          var dateStr = line.slice(0, comma).trim();
-          var value = parseFloat(line.slice(comma + 1));
-          if (!dateStr || !isFinite(value)) continue;
-          var ms = Date.parse(dateStr + "T00:00:00Z");
-          if (!isFinite(ms)) continue;
-          rows.push([ms, value]);
-          vals.push(value);
-        }
-        if (!rows.length) return missing(id);
-
-        var points = rows;
-        if (rows.length > MAX_POINTS) {
-          var step = (rows.length - 1) / (MAX_POINTS - 1);
-          points = [];
-          for (var k2 = 0; k2 < MAX_POINTS; k2++) {
-            points.push(rows[Math.round(k2 * step)]);
-          }
-          points[points.length - 1] = rows[rows.length - 1];
-        }
-
-        var last = rows[rows.length - 1];
-        var prev = rows.length > 1 ? rows[rows.length - 2] : null;
-
-        return {
-          id: id,
-          title: s.title || obj.title || id,
-          units: obj.units_short || "",
-          frequency: s.frequency || obj.frequency || "",
-          points: points,
-          latest: round3(last[1]),
-          latest_date: isoDay(last[0]),
-          latest_label: shortDate(last[0]),
-          first_label: shortDate(rows[0][0]),
-          change: prev ? round3(last[1] - prev[1]) : 0,
-          min: round3(Math.min.apply(null, vals)),
-          max: round3(Math.max.apply(null, vals)),
-          median: round3(median(vals)),
-          observations: rows.length
-        };
-      } catch (e) {
-        return missing(id);
+      var rows = [];
+      var vals = [];
+      var lines = text.split(/\r?\n/);
+      for (var i = 1; i < lines.length; i++) {
+        var line = lines[i];
+        if (!line) continue;
+        var comma = line.indexOf(",");
+        if (comma < 1) continue;
+        var dateStr = line.slice(0, comma).trim();
+        var value = parseFloat(line.slice(comma + 1));
+        if (!dateStr || !isFinite(value)) continue;
+        var ms = Date.parse(dateStr + "T00:00:00Z");
+        if (!isFinite(ms)) continue;
+        rows.push([ms, value]);
+        vals.push(value);
       }
+      if (!rows.length) return missing(id);
+
+      var points = rows;
+      if (rows.length > MAX_POINTS) {
+        var step = (rows.length - 1) / (MAX_POINTS - 1);
+        points = [];
+        for (var k2 = 0; k2 < MAX_POINTS; k2++) {
+          points.push(rows[Math.round(k2 * step)]);
+        }
+        points[points.length - 1] = rows[rows.length - 1];
+      }
+
+      var last = rows[rows.length - 1];
+      var prev = rows.length > 1 ? rows[rows.length - 2] : null;
+
+      return {
+        id: id,
+        title: s.title || obj.title || id,
+        units: obj.units_short || "",
+        frequency: s.frequency || obj.frequency || "",
+        points: points,
+        latest: round3(last[1]),
+        latest_date: isoDay(last[0]),
+        latest_label: shortDate(last[0]),
+        first_label: shortDate(rows[0][0]),
+        change: prev ? round3(last[1] - prev[1]) : 0,
+        min: round3(Math.min.apply(null, vals)),
+        max: round3(Math.max.apply(null, vals)),
+        median: round3(median(vals)),
+        observations: rows.length
+      };
     }));
 
     // keep the user's slot order, and give every configured id a slot even
