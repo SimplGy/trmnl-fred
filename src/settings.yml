@@ -1,0 +1,95 @@
+---
+strategy: polling
+no_screen_padding: 'no'
+dark_mode: 'no'
+static_data: ''
+polling_verb: get
+framework_version: 3.4.0
+serverless_language: ''
+refresh_interval_floor: ''
+polling_url: https://fred.stlouisfed.org/graph/api/series/?id={{ series_1 }},{{ series_2 }},{{ series_3 }},{{ series_4 }}
+polling_headers: ''
+polling_body: ''
+id: 505180
+oauth_enabled: 'false'
+oauth_pkce_enabled: 'no'
+oauth_authorize_url: ''
+oauth_token_url: ''
+oauth_scopes: ''
+oauth_scope_separator: ''
+oauth_refresh_url: ''
+oauth_auth_params: ''
+oauth_token_headers: ''
+oauth_token_site: ''
+oauth_token_params: ''
+oauth_token_request_auth_method: ''
+oauth_body_format: ''
+oauth_token_response_metadata: ''
+oauth_authorization_method: ''
+oauth_refresh_params: ''
+oauth_token_field_name: ''
+oauth_expiry_field_name: ''
+oauth_expiry_strategy: ''
+oauth_fixed_expiry_ms: ''
+custom_fields:
+- keyname: about
+  name: About This Plugin
+  field_type: author_bio
+  category: finance
+  description: Four FRED charts on your ePaper display. Choose any 1-4 series by ID from fred.stlouisfed.org and each one gets its own clean line chart — full history, no API key, no signup. Max, median and min are marked on the Y axis, year gridlines run across the X, and every graph takes an optional short name so long FRED titles stay readable. Ships with debt-to-GDP, household debt service, 30-year mortgage rates and egg prices.
+  learn_more_url: https://simple.gy
+- keyname: series_1
+  field_type: string
+  name: Graph 1
+  description: FRED series ID, from the URL on fred.stlouisfed.org
+  placeholder: GFDEGDQ188S
+  default: GFDEGDQ188S
+- keyname: label_1
+  field_type: string
+  name: Graph 1 short name
+  description: Shown on the graph. Leave blank to use the FRED title.
+  placeholder: Debt to GDP ratio
+  default: Debt to GDP ratio
+  optional: true
+- keyname: series_2
+  field_type: string
+  name: Graph 2
+  description: Leave blank to hide this graph
+  placeholder: TDSP
+  default: TDSP
+- keyname: label_2
+  field_type: string
+  name: Graph 2 short name
+  description: Shown on the graph. Leave blank to use the FRED title.
+  placeholder: Household Debt Service
+  default: Household Debt Service
+  optional: true
+- keyname: series_3
+  field_type: string
+  name: Graph 3
+  description: Leave blank to hide this graph
+  placeholder: MORTGAGE30US
+  default: MORTGAGE30US
+- keyname: label_3
+  field_type: string
+  name: Graph 3 short name
+  description: Shown on the graph. Leave blank to use the FRED title.
+  placeholder: 30-Yr Mortgage
+  default: 30-Yr Mortgage
+  optional: true
+- keyname: series_4
+  field_type: string
+  name: Graph 4
+  description: Leave blank to hide this graph
+  placeholder: APU0000708111
+  default: APU0000708111
+- keyname: label_4
+  field_type: string
+  name: Graph 4 short name
+  description: Shown on the graph. Leave blank to use the FRED title.
+  placeholder: Egg Prices
+  default: Egg Prices
+  optional: true
+name: FRED Dashboard
+description: Show Financial graphs from Fred
+refresh_interval: 1440
