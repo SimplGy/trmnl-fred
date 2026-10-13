@@ -1,0 +1,10 @@
+{% assign n = charts.size %}
+{% if n == 0 %}
+{% render "fred_empty", fred_ids: fred_ids, error: error %}
+{% else %}
+<div class="layout layout--col gap--small">
+  {% render "chart_cell", cell_chart: charts[0], fred_labels: fred_labels, label_h: 18, max_ticks: 4 %}
+</div>
+{% endif %}
+
+{% render "fred_title_bar", trmnl: trmnl %}
