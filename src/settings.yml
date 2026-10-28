@@ -4,7 +4,7 @@ no_screen_padding: 'no'
 dark_mode: 'no'
 static_data: ''
 polling_verb: get
-framework_version: 3.4.0
+framework_version: 3.4.4
 serverless_language: ''
 refresh_interval_floor: ''
 polling_url: https://fred.stlouisfed.org/graph/api/series/?id={{ series_1 }},{{ series_2 }},{{ series_3 }},{{ series_4 }}
