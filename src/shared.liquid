@@ -22,7 +22,7 @@
 {% if cfv.series_4 and lab_4 and lab_4 != "" %}{% assign fred_labels = fred_labels | append: cfv.series_4 | append: "|" | append: lab_4 | append: ";" %}{% endif %}
 
 {% template chart_cell %}
-{% assign title_class = title_class | default: 'label label--small' %}
+{% assign title_class = title_class | default: 'label label--small lg:label--large' %}
 {% assign label_h = label_h | default: 18 %}
 {% assign max_ticks = max_ticks | default: 6 %}
 
